@@ -1,0 +1,93 @@
+# Test e installatori per Windows, macOS e Linux.
+# A ogni tag "v*" (es. v0.3.0) gli installatori vengono allegati a una release.
+name: Test e installatori
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update && sudo apt-get install -y libegl1 libxkbcommon0 fonts-dejavu ghostscript libreoffice-draw
+      - run: pip install -r requirements.txt pytest
+      - run: python -m pytest -q tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+
+  build:
+    needs: test
+    permissions:
+      contents: write   # serve per allegare gli installatori alla release
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt pyinstaller
+      - name: Versione
+        shell: bash
+        run: echo "VERSION=$(python -c 'import charta; print(charta.__version__)')" >> "$GITHUB_ENV"
+
+      # ------------------------------------------------------------- Windows
+      - name: Programma (Windows)
+        if: runner.os == 'Windows'
+        run: pyinstaller --noconfirm --windowed --name Charta --paths . --collect-submodules charta --exclude-module numpy --exclude-module lxml --exclude-module PIL --exclude-module tkinter --exclude-module pytest --icon packaging/icons/charta.ico charta/__main__.py
+      - name: Installatore (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\iscc.exe" /DAppVersion=$env:VERSION packaging\windows\charta.iss
+          Compress-Archive -Path dist/Charta -DestinationPath "dist/Charta-$env:VERSION-windows-portable.zip"
+
+      # --------------------------------------------------------------- macOS
+      - name: Programma (macOS)
+        if: runner.os == 'macOS'
+        run: pyinstaller --noconfirm --windowed --name Charta --paths . --collect-submodules charta --exclude-module numpy --exclude-module lxml --exclude-module PIL --exclude-module tkinter --exclude-module pytest --icon packaging/icons/charta.icns --osx-bundle-identifier org.eurekafoundation.charta charta/__main__.py
+      - name: Immagine disco (macOS)
+        if: runner.os == 'macOS'
+        run: bash packaging/macos/build_dmg.sh "$VERSION"
+
+      # --------------------------------------------------------------- Linux
+      - name: Programma (Linux)
+        if: runner.os == 'Linux'
+        run: pyinstaller --noconfirm --windowed --name Charta --paths . --collect-submodules charta --exclude-module numpy --exclude-module lxml --exclude-module PIL --exclude-module tkinter --exclude-module pytest charta/__main__.py
+      - name: Pacchetto .deb (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          bash packaging/linux/build_deb.sh "$VERSION"
+          tar -czf "dist/Charta-$VERSION-linux-amd64.tar.gz" -C dist Charta
+
+      # ------------------------------------------------------------ consegna
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Charta-${{ runner.os }}
+          path: |
+            dist/Charta-*-setup.exe
+            dist/Charta-*-portable.zip
+            dist/Charta-*.dmg
+            dist/Charta-*.deb
+            dist/Charta-*.tar.gz
+      - name: Allega alla release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/Charta-*-setup.exe
+            dist/Charta-*-portable.zip
+            dist/Charta-*.dmg
+            dist/Charta-*.deb
+            dist/Charta-*.tar.gz
