@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-charta">
+    <comment>Charta document</comment>
+    <comment xml:lang="it">Documento Charta</comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.charta" weight="60"/>
+    <magic priority="60">
+      <match type="string" offset="30" value="mimetypeapplication/x-charta"/>
+    </magic>
+  </mime-type>
+</mime-info>

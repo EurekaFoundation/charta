@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Charta
+GenericName=Desktop Publishing
+GenericName[it]=Impaginazione
+Comment=Free desktop publishing: flyers, posters, brochures, menus
+Comment[it]=Impaginazione libera: volantini, locandine, brochure, menù
+Exec=charta %f
+Icon=charta
+Terminal=false
+Categories=Office;Graphics;Publishing;
+MimeType=application/x-charta;application/x-mspublisher;application/vnd.oasis.opendocument.graphics;
+Keywords=publisher;flyer;poster;brochure;volantino;locandina;impaginazione;
+StartupWMClass=Charta
