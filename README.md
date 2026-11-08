@@ -8,6 +8,8 @@ Microsoft ha ritirato Publisher nell'ottobre 2026. Charta offre uno strumento
 semplice, che funziona offline, non richiede abbonamenti, salva in un formato
 aperto e **apre i vecchi file `.pub`**.
 
+Fa parte di **[Eureka Suite](https://github.com/EurekaFoundation)**: tema e lingua sono condivisi con gli altri programmi della suite tramite [eureka-core](https://github.com/EurekaFoundation/eureka-core).
+
 *English: Charta is a free desktop publishing app (an open source alternative to
 Microsoft Publisher). The interface is available in Italian and English.*
 

@@ -121,16 +121,17 @@ STRINGS = {
         "The chosen box already contains text: it will be appended to the linked text. Continue?",
     "Dati caricati: {n} righe, colonne: {c}": "Data loaded: {n} rows, columns: {c}",
     "Eliminare la pagina {n} e il suo contenuto?": "Delete page {n} and its contents?",
-    "<p>Impaginazione libera per volantini, locandine, brochure, menù e attestati: "
-    "un'alternativa open source a Microsoft Publisher.</p>"
-    "<p>Software libero distribuito con licenza GNU GPL versione 3 o successiva. "
-    "Puoi usarlo, studiarlo, modificarlo e condividerlo.</p>"
-    "<p>Un progetto EurekaFoundation.</p>":
-        "<p>Free desktop publishing for flyers, posters, brochures, menus and certificates: "
-        "an open source alternative to Microsoft Publisher.</p>"
-        "<p>Free software released under the GNU GPL version 3 or later. "
-        "You can use, study, modify and share it.</p>"
-        "<p>A EurekaFoundation project.</p>",
+    "Volantini, locandine, brochure, menù e attestati: "
+    "un'alternativa open source a Microsoft Publisher.":
+        "Flyers, posters, brochures, menus and certificates: "
+        "an open source alternative to Microsoft Publisher.",
+
+    # ------------------------------------------------------------ Eureka Suite
+    "Come il sistema": "Follow system",
+    "Tema": "Theme",
+    "Chiaro": "Light",
+    "Scuro": "Dark",
+    "Controlla aggiornamenti": "Check for updates",
 
     # ------------------------------------------------------------ scorciatoie
     "Seleziona, Testo, Immagine, Tabella, Rettangolo, Ellisse, Linea":

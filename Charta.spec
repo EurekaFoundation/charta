@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 hiddenimports = []
 hiddenimports += collect_submodules('charta')
@@ -9,7 +9,7 @@ a = Analysis(
     ['charta/__main__.py'],
     pathex=['.'],
     binaries=[],
-    datas=[],
+    datas=collect_data_files('eureka_core'),   # traduzioni di Eureka Suite
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},

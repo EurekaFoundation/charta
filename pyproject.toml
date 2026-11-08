@@ -9,7 +9,11 @@ description = "Impaginazione libera per volantini, locandine, brochure e menù: 
 readme = "README.md"
 license = "GPL-3.0-or-later"
 requires-python = ">=3.10"
-dependencies = ["PySide6>=6.5", "openpyxl>=3.0"]
+dependencies = [
+    "PySide6>=6.6",
+    "openpyxl>=3.0",
+    "eureka-core @ git+https://github.com/EurekaFoundation/eureka-core@v0.1.1",
+]
 keywords = ["desktop publishing", "publisher", "impaginazione", "volantini", "scuola"]
 classifiers = [
     "Programming Language :: Python :: 3",
