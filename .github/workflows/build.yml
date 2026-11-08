@@ -44,7 +44,7 @@ jobs:
       # ------------------------------------------------------------- Windows
       - name: Programma (Windows)
         if: runner.os == 'Windows'
-        run: pyinstaller --noconfirm --windowed --name Charta --paths . --collect-submodules charta --exclude-module numpy --exclude-module lxml --exclude-module PIL --exclude-module tkinter --exclude-module pytest --icon packaging/icons/charta.ico charta/__main__.py
+        run: pyinstaller --noconfirm --windowed --name Charta --paths . --collect-submodules charta --collect-data eureka_core --exclude-module numpy --exclude-module lxml --exclude-module PIL --exclude-module tkinter --exclude-module pytest --icon packaging/icons/charta.ico charta/__main__.py
       - name: Installatore (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -56,7 +56,7 @@ jobs:
       # --------------------------------------------------------------- macOS
       - name: Programma (macOS)
         if: runner.os == 'macOS'
-        run: pyinstaller --noconfirm --windowed --name Charta --paths . --collect-submodules charta --exclude-module numpy --exclude-module lxml --exclude-module PIL --exclude-module tkinter --exclude-module pytest --icon packaging/icons/charta.icns --osx-bundle-identifier org.eurekafoundation.charta charta/__main__.py
+        run: pyinstaller --noconfirm --windowed --name Charta --paths . --collect-submodules charta --collect-data eureka_core --exclude-module numpy --exclude-module lxml --exclude-module PIL --exclude-module tkinter --exclude-module pytest --icon packaging/icons/charta.icns --osx-bundle-identifier org.eurekafoundation.charta charta/__main__.py
       - name: Immagine disco (macOS)
         if: runner.os == 'macOS'
         run: bash packaging/macos/build_dmg.sh "$VERSION"
@@ -64,7 +64,7 @@ jobs:
       # --------------------------------------------------------------- Linux
       - name: Programma (Linux)
         if: runner.os == 'Linux'
-        run: pyinstaller --noconfirm --windowed --name Charta --paths . --collect-submodules charta --exclude-module numpy --exclude-module lxml --exclude-module PIL --exclude-module tkinter --exclude-module pytest charta/__main__.py
+        run: pyinstaller --noconfirm --windowed --name Charta --paths . --collect-submodules charta --collect-data eureka_core --exclude-module numpy --exclude-module lxml --exclude-module PIL --exclude-module tkinter --exclude-module pytest charta/__main__.py
       - name: Pacchetto .deb (Linux)
         if: runner.os == 'Linux'
         run: |

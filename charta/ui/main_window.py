@@ -8,19 +8,19 @@ import json
 import math
 import os
 
-from PySide6.QtCore import QBuffer, QByteArray, QLocale, QMimeData, QPointF, QSettings, Qt, QTimer
+from PySide6.QtCore import QBuffer, QByteArray, QEvent, QLocale, QMimeData, QPointF, QSettings, Qt, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QGuiApplication, QImage, QKeySequence, QTextCursor
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter
 from PySide6.QtWidgets import (QApplication, QComboBox, QDockWidget, QFileDialog,
                                QLabel, QMainWindow, QMessageBox, QToolBar)
 
-from charta import APP_NAME, FILE_EXT, __version__, merge
+from charta import APP_NAME, FILE_EXT, merge
 from charta.canvas.ruler import CanvasArea
 from charta.canvas.scene import PageScene
 from charta.canvas.view import CanvasView
 from charta.document.model import CorruptFileError, Document
 from charta.export import render
-from charta.i18n import LANGUAGES, language, tr
+from charta.i18n import LANGUAGES, tr
 from charta.items import GroupFrame, ImageFrame, ShapeFrame, TextFrame, flow, item_from_dict
 from charta.items import table as tables
 from charta.items.base import new_uid
@@ -118,7 +118,8 @@ class History:
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.settings = QSettings()
+        self.app = QApplication.instance()   # EurekaApp: tema, lingua, aggiornamenti
+        self.settings = QSettings()          # impostazioni proprie di Charta
         self.doc = Document()
         self.path: str | None = None
         self.scenes: list[PageScene] = []
@@ -238,15 +239,18 @@ class MainWindow(QMainWindow):
 
         self.tool_group = QActionGroup(self)
         self.tool_actions = {}
-        for key, label, icon, sc in (("select", tr("Seleziona"), icons.select_icon(), "V"),
-                                     ("text", tr("Testo"), icons.text_icon(), "T"),
-                                     ("image", tr("Immagine"), icons.image_icon(), "I"),
-                                     ("table", tr("Tabella"), icons.table_icon(), "B"),
-                                     ("rect", tr("Rettangolo"), icons.rect_icon(), "R"),
-                                     ("ellipse", tr("Ellisse"), icons.ellipse_icon(), "E"),
-                                     ("line", tr("Linea"), icons.line_icon(), "L")):
+        # le icone dipendono dai colori del tema: le funzioni che le disegnano
+        # restano a disposizione per ridisegnarle quando il tema cambia
+        self.tool_icons = {"select": icons.select_icon, "text": icons.text_icon,
+                           "image": icons.image_icon, "table": icons.table_icon,
+                           "rect": icons.rect_icon, "ellipse": icons.ellipse_icon,
+                           "line": icons.line_icon}
+        for key, label, sc in (("select", tr("Seleziona"), "V"), ("text", tr("Testo"), "T"),
+                               ("image", tr("Immagine"), "I"), ("table", tr("Tabella"), "B"),
+                               ("rect", tr("Rettangolo"), "R"), ("ellipse", tr("Ellisse"), "E"),
+                               ("line", tr("Linea"), "L")):
             a = A(label, lambda _=False, k=key: self.set_tool(k), sc,
-                  f"{label} ({sc})", True, icon)
+                  f"{label} ({sc})", True, self.tool_icons[key]())
             self.tool_group.addAction(a)
             self.tool_actions[key] = a
         self.tool_actions["select"].setChecked(True)
@@ -287,6 +291,7 @@ class MainWindow(QMainWindow):
         self.a_merge = A(tr("Anteprima ed esportazione…"), self.open_merge, "Ctrl+M")
 
         self.a_about = A(tr("Informazioni su Charta"), self.about)
+        self.a_updates = A(tr("Controlla aggiornamenti"), lambda: self.app.check_updates(self))
         self.a_keys = A(tr("Scorciatoie da tastiera"), self.shortcuts_help, "F1")
 
     def _build_menus(self):
@@ -336,17 +341,29 @@ class MainWindow(QMainWindow):
         m.addActions([self.a_rulers, self.a_guides, self.a_clear_guides, self.a_grid,
                       self.a_snap, self.a_margins])
         m.addSeparator()
+        # lingua e tema sono comuni a tutta Eureka Suite
         lang_menu = m.addMenu(tr("Lingua"))
         group = QActionGroup(self)
-        current = self.settings.value("ui/language", "")
-        for code, name in LANGUAGES.items():
+        current = self.app.settings.suite.get("language", "system")
+        for code, name in {"system": tr("Come il sistema"), **LANGUAGES}.items():
             a = lang_menu.addAction(name, lambda c=code: self.set_language(c))
             a.setCheckable(True)
-            a.setChecked(code == (current or language()))
+            a.setChecked(code == current)
+            group.addAction(a)
+            if code == "system":
+                lang_menu.addSeparator()
+        theme_menu = m.addMenu(tr("Tema"))
+        group = QActionGroup(self)
+        for code, name in (("system", tr("Come il sistema")), ("light", tr("Chiaro")), ("dark", tr("Scuro"))):
+            a = theme_menu.addAction(name, lambda c=code: self.app.apply_theme(c))
+            a.setCheckable(True)
+            a.setChecked(code == self.app.theme)
             group.addAction(a)
 
         m = mb.addMenu(tr("&Aiuto"))
-        m.addActions([self.a_keys, self.a_about])
+        m.addActions([self.a_keys, self.a_updates])
+        m.addSeparator()
+        m.addAction(self.a_about)
 
     def _build_toolbars(self):
         tb = QToolBar(tr("File"))
@@ -1225,20 +1242,24 @@ class MainWindow(QMainWindow):
             sc.update()
 
     def set_language(self, code: str):
-        self.settings.setValue("ui/language", code)
+        self.app.set_language(code)   # vale per tutta la suite
+        self.app.settings.save()
         QMessageBox.information(self, APP_NAME, "La nuova lingua sarà attiva al prossimo avvio di Charta.\n"
                                 "The new language will be used the next time you start Charta.")
 
     # ===================================================================== aiuto
     def about(self):
-        QMessageBox.about(
-            self, tr("Informazioni su Charta"),
-            f"<h2>{APP_NAME} {__version__}</h2>"
-            + tr("<p>Impaginazione libera per volantini, locandine, brochure, menù e attestati: "
-                 "un'alternativa open source a Microsoft Publisher.</p>"
-                 "<p>Software libero distribuito con licenza GNU GPL versione 3 o successiva. "
-                 "Puoi usarlo, studiarlo, modificarlo e condividerlo.</p>"
-                 "<p>Un progetto EurekaFoundation.</p>"))
+        self.app.show_about(self, extra=tr(
+            "Volantini, locandine, brochure, menù e attestati: "
+            "un'alternativa open source a Microsoft Publisher."))
+
+    def changeEvent(self, event):
+        # cambio di tema (dal menu o dal sistema): le icone disegnate in codice
+        # vanno ridisegnate con i nuovi colori
+        if event.type() == QEvent.PaletteChange and hasattr(self, "tool_actions"):
+            for key, action in self.tool_actions.items():
+                action.setIcon(self.tool_icons[key]())
+        super().changeEvent(event)
 
     def shortcuts_help(self):
         rows = [

@@ -1,9 +1,12 @@
 import os
 import sys
+import tempfile
 
 import pytest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+# impostazioni di Eureka Suite in una cartella temporanea, non in quella dell'utente
+os.environ.setdefault("EUREKA_CONFIG_DIR", tempfile.mkdtemp(prefix="charta-test-"))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 _exit_status = 0
@@ -12,9 +15,9 @@ _exit_status = 0
 @pytest.fixture(scope="session")
 def app():
     from PySide6.QtWidgets import QApplication
-    a = QApplication.instance() or QApplication([])
-    a.setOrganizationName("EurekaFoundation")
-    a.setApplicationName("Charta-test")
+    from charta.app import create_app
+    a = QApplication.instance() or create_app(["charta-test"])
+    a.setApplicationName("Charta-test")   # QSettings dei test separate da quelle vere
     return a
 
 
